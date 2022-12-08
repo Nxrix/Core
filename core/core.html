@@ -1,0 +1,159 @@
+<script id="core" type="x-shader/x-fragment">#version 300 es
+
+precision highp float;
+
+out vec4 FragColor;
+
+float dither[16] = float[16](
+  0.0,8.0,2.0,10.0,
+  12.0,4.0,14.0,6.0,
+  3.0,11.0,1.0,9.0,
+  15.0,7.0,13.0,5.0
+);
+
+vec3 palette[33] = vec3[33](
+  vec3(219, 145, 145),
+  vec3(255, 227, 227),
+  vec3(171, 134, 255),
+  vec3(255, 179, 228),
+  vec3(255, 150, 150),
+  vec3(255, 163, 125),
+  vec3(255, 255, 117),
+  vec3(171, 255, 104),
+  vec3(0, 194, 255),
+  vec3(254, 255, 255),
+  vec3(91, 91, 118),
+  vec3(187, 103, 122),
+  vec3(255, 202, 184),
+  vec3(137, 107, 214),
+  vec3(255, 144, 202),
+  vec3(255, 72, 101),
+  vec3(255, 108, 80),
+  vec3(255, 205, 0),
+  vec3(62, 186, 73),
+  vec3(0, 140, 255),
+  vec3(221, 224, 240),
+  vec3(60, 60, 80),
+  vec3(144, 79, 90),
+  vec3(245, 171, 160),
+  vec3(102, 81, 158),
+  vec3(230, 108, 167),
+  vec3(187, 52, 77),
+  vec3(200, 77, 61),
+  vec3(233, 163, 0),
+  vec3(0, 134, 74),
+  vec3(0, 106, 212),
+  vec3(135, 139, 160),
+  vec3(26, 26, 37)
+);
+
+vec4 rgb2index(in vec4 v) {
+  int idx;
+  float min = 9.0;
+  for(int i=0; i<33; i++) {
+    vec3 col = palette[i]/256.0;
+    float d = (v.x - col.x) * (v.x - col.x) + (v.y - col.y) * (v.y - col.y) + (v.z - col.z) * (v.z - col.z);
+    if (d<min) {
+      min = d;
+      idx = i;
+    }
+  }
+  return vec4(palette[idx]/256.0,1.0);
+}
+
+vec3 rgb2hsl( in vec3 c ){
+  float h = 0.0;
+	float s = 0.0;
+	float l = 0.0;
+	float r = c.r;
+	float g = c.g;
+	float b = c.b;
+	float cMin = min( r, min( g, b ) );
+	float cMax = max( r, max( g, b ) );
+
+	l = ( cMax + cMin ) / 2.0;
+	if ( cMax > cMin ) {
+		float cDelta = cMax - cMin;
+        
+        //s = l < .05 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) ); Original
+		s = l < .0 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) );
+        
+		if ( r == cMax ) {
+			h = ( g - b ) / cDelta;
+		} else if ( g == cMax ) {
+			h = 2.0 + ( b - r ) / cDelta;
+		} else {
+			h = 4.0 + ( r - g ) / cDelta;
+		}
+
+		if ( h < 0.0) {
+			h += 6.0;
+		}
+		h = h / 6.0;
+	}
+	return vec3( h, s, l );
+}
+
+vec3 hsl2rgb(in vec3 c) {
+  vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
+  return c.z+c.y*(rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
+}
+
+vec3 rgb2hsv(vec3 c) {
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(in vec3 c) {
+  vec4 k = vec4(1.0,2.0/3.0,1.0/3.0,3.0);
+  vec3 p = abs(fract(c.xxx + k.xyz)*6.0-k.www);
+  return c.z*mix(k.xxx,clamp(p-k.xxx,0.0,1.0),c.y);
+}
+
+float random(float n){return fract(sin(n) * 43758.5453123);}
+float atan2( in float y, in float x){bool s = (abs(x) > abs(y));return mix(3.141592 / 2.0 - atan(x, y), atan(y, x), s)/6.283184;}
+vec2 rotate(vec2 v, float a) {
+  float s = sin(a);
+  float c = cos(a);
+  mat2 m = mat2(c,-s,s,c);
+  return m * v;
+}
+
+mat4 rotationAxis(vec3 axis, float angle) {
+  axis = normalize(axis);
+  float s = sin(angle);
+  float c = cos(angle);
+  float oc = 1.0 - c;
+
+  return mat4(
+    oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+    oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,  0.0,
+    oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c, 0.0,
+    0.0, 0.0, 0.0, 1.0
+  );
+}
+
+vec3 rotateX(vec3 p, float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return vec3(p.x, c*p.y+s*p.z, -s*p.y+c*p.z);
+}
+
+vec3 rotateY(vec3 p, float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return vec3(c*p.x-s*p.z, p.y, s*p.x+c*p.z);
+}
+
+vec3 rotateZ(vec3 p, float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return vec3(c*p.x+s*p.y, -s*p.x+c*p.y, p.z);
+}
+
+</script>
