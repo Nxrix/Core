@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Core</title>
+</head>
+
+<body>
+</body>
+Hello World
+<img src="fancade.png">
+<script id="shaderFs" type="x-shader/x-fragment" res="1/2">
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+  vec2 p = fragCoord.xy/iResolution;
+  vec3 col = vec3(p.x,p.y,cos(iTime)*.5+.5);
+  //dithering
+  highp int i = int(mod(floor(gl_FragCoord.x),4.0)+mod(floor(gl_FragCoord.y),4.0)*4.0);
+  float d = (dither[i]+1.0)/256.0;
+  fragColor = vec4(col+d,1.0);
+}
+</script>
+<script src="core/core.js"></script>
+</html>
