@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+</head>
+
+<body></body>
+
+<script id="shaderFs" type="x-shader/x-fragment" res="1/2">
+#define R iResolution.xy
+float s;vec2 z;float i;float itr = 128.;
+void mainImage( out vec4 O, in vec2 I ) {
+  vec2 c = ((( 2.*I - R ) / R.y)*2. + vec2(.5,0))/pow(iTime,iTime/4.)-vec2(1.7875,0);
+	for(; ++i<=itr && dot(z,z) < 4. ;){
+    z = mat2(z,vec2(-z.y,z.x)) * z + c;
+    if ((z.x*z.x+z.y*z.y)>4.) s = 0.;
+	}
+  highp int index = int(mod(floor(gl_FragCoord.x),4.0)+mod(floor(gl_FragCoord.y),4.0)*4.0);
+  float d = (dither[index]+1.0)/256.0;
+  s = i<itr?i/itr*1.5:0.;
+  O = (vec4(vec3(s,0,s*1.5)+d*2., 1.0));
+}
+</script>
+<script src="core/core.js"></script>
+
+</html>
