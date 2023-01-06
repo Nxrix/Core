@@ -113,97 +113,9 @@ body {
 <div id="input"></div>
 <div id="keyboard"></div>
 </body>
+<script src="translator.js"></script>
 <script>
-const oprToFunc2 = (inp,z,i) => {
-  if (inp[i]==z) {
-    inp[i]=",";
-    t=0;
-    if (inp[i-1]==")") {
-      f=1;
-      while (inp[t]!="("&&t>0) {
-        t--;
-      }
-      if (inp[t]==")") {
-        f++;
-      }
-      else if (inp[t]=="(") {
-        f--;
-        if (f==0) {
-          inp[t]=z+"(";
-          inp[i-1]="";
-        }
-      }
-    }
-    else {
-      inp[i-1]=z+"("+inp[i-1];
-    }
-    t=0;
-    if (inp[i+1]=="(") {
-      f=1;
-      while (inp[t]!=")"&&t<128) {
-        t++;
-      }
-      if (inp[t]=="(") {
-        f++;
-      }
-      else if (inp[t]==")") {
-        f--;
-        if (f==0) {
-          inp[t]=")";
-          inp[i+1]="";
-        }
-      }
-    }
-    else {
-      inp[i+1]=inp[i+1]+")";
-    }
-  }
-  return inp;
-}
-const oprToFunc1 = (inp,inp2,z,i) => {
-  if (inp[i]==z) {
-    inp[i]=","+inp2+")";
-    t=0;
-    if (inp[i-1]==")") {
-      f=1;
-      while (inp[t]!="("&&t>0) {
-        t--;
-      }
-      if (inp[t]==")") {
-        f++;
-      }
-      else if (inp[t]=="(") {
-        f--;
-        if (f==0) {
-          inp[t]=z+"(";
-          inp[i-1]="";
-        }
-      }
-    }
-    else {
-      inp[i-1]=z+"("+inp[i-1];
-    }
-  }
-  return inp;
-}
-
-const translateAB = (inp) => {
-  inp=inp.replaceAll("-","_").toLowerCase().replaceAll("a'","(a')").replaceAll("b'","(b')").split("");
-  i=0;
-  o="";
-  for (z in inp) {
-    inp=oprToFunc2(inp,"n",i);
-    inp=oprToFunc2(inp,"u",i);
-    inp=oprToFunc2(inp,"_",i);
-    inp=oprToFunc1(inp,"m","'",i);
-    i++;
-  }
-  for (z in inp) {
-    o+=inp[z];
-  }
-  return o.replaceAll("'","_p");
-
-};
+m="m";a="a";b="b";
 btns = ["C","n","u","‹x","A","B","(",")","-","'","M","="]
 add = (x) => {
   if (x==btns[0]) {
@@ -213,7 +125,8 @@ add = (x) => {
     input.innerHTML = input.innerHTML.slice(0,input.innerHTML.length-1);
   }
   else if (x=="=") {
-    iframe.location.replace("anb.html?equ="+translateAB(input.innerHTML));
+    iframe.location.replace("anb.html?equ="+eval(translate(input.innerHTML)));
+    console.clear;
   }
   else {
     input.innerHTML += x;
