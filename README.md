@@ -1,3 +1,3 @@
 # Core
 JavaScript GLSL viewer
-https://ndimend.github.io/Core/viewer.html
+https://nxrix.github.io/Core/viewer.html
